@@ -196,6 +196,34 @@ func (node *Node) handleVoteReq(req *RequestVotesReq) (*RequestVotesResp, error)
 	return resp, nil
 }
 
+func (node *Node) sendAppendReqs() {
+	appendReq := &AppendEntriesReq{
+		Term:     node.currentTerm,
+		LeaderId: node.myAddr,
+	}
+	for _, peer := range node.members {
+		go func() {
+			var resp AppendEntriesResp
+			cl := node.getClient(peer)
+			cl.Call("Node.RpcAppendEntries", appendReq, &resp)
+		}()
+	}
+}
+
+func (node *Node) sendVoteReqs() {
+	voteReq := &RequestVotesReq{
+		Term:        node.currentTerm,
+		CandidateId: node.myAddr,
+	}
+	for _, peer := range node.members {
+		go func() {
+			var resp RequestVotesResp
+			cl := node.getClient(peer)
+			cl.Call("Node.RpcVotingReq", voteReq, &resp)
+		}()
+	}
+}
+
 func (node *Node) processMsg(rpcMsg *rpcMsg) {
 	switch rpcMsg.msgType {
 	case append_entries_req:
@@ -229,7 +257,7 @@ func (node *Node) RpcAppendEntries(req *AppendEntriesReq, resp *AppendEntriesRes
 
 func (node *Node) RpcVotingReq(req *RequestVotesReq, resp *RequestVotesResp) error {
 	msg := &rpcMsg{
-		msgType: append_entries_req,
+		msgType: voting_req,
 		msg:     req,
 		respCh:  make(chan interface{}),
 	}
