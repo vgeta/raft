@@ -47,8 +47,3 @@ type RequestVotesResp struct {
 	Term        uint64
 	VoteGranted bool
 }
-
-const (
-	APPEND_ENTRIES_REQ = iota
-	VOTING_REQ
-)
